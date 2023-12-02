@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from sklearn.feature_selection import VarianceThreshold 
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import QuantileTransformer,StandardScaler,Normalizer,PowerTransformer
+from sklearn.preprocessing import QuantileTransformer,StandardScaler,LabelEncoder
 from sklearn.model_selection import KFold,cross_val_score
 
 from sklearn.ensemble import RandomForestClassifier
@@ -11,6 +11,9 @@ df = pd.read_csv("balanced.csv",sep=";")
 X = df.drop(columns=["pIC50","Smiles","categories"])
 Y = df["categories"]
 print("X and Y defined\n.\n.\n.")
+enc = LabelEncoder()
+Y = enc.fit_transform(Y)
+print("Y is encoded")
 
 X_train, X_test, Y_train, Y_test = train_test_split(
     X,
@@ -58,8 +61,10 @@ model = RandomForestClassifier(
 print("Model is Learning\n.\n.\n.")
 model.fit(X_train, Y_train)
 print("Model Learned\n.\n.\n.")
-Y_pred=model.predict(X_test)
+
+
 print("Model is Predicting\n.\n.\n.")
+Y_pred=model.predict(X_test)
 
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
@@ -70,3 +75,17 @@ recall = recall_score(Y_test, Y_pred, average='macro')
 f1 = f1_score(Y_test, Y_pred, average='macro')   
 
 print(f"Accuracy: {accuracy}, Precision: {precision}, Recall: {recall}, F1 Score: {f1}")
+
+
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# Assuming 'y_true' is the true labels and 'y_pred' is the predicted labels
+cm = confusion_matrix(Y_test, Y_pred)
+
+# Visualize the confusion matrix using seaborn
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False)
+plt.xlabel('Predicted Labels')
+plt.ylabel('True Labels')
+plt.savefig('prediction_vs_true_plot (Classifier).png')

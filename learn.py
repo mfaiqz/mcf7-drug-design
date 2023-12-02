@@ -2,8 +2,10 @@ import pandas as pd
 import numpy as np
 from sklearn.feature_selection import VarianceThreshold 
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import QuantileTransformer,StandardScaler,Normalizer,PowerTransformer
+from sklearn.preprocessing import QuantileTransformer,StandardScaler,Normalizer,PowerTransformer, MinMaxScaler
 from sklearn.model_selection import KFold,cross_val_score
+from sklearn.externals import joblib
+import pickle
 
 # from sklearn import svm
 from sklearn.svm import SVR
@@ -37,8 +39,7 @@ f"""Data Split Details
 - test = {len(X_test)}\n.\n.\n.
 """
 )
-
-scaler = StandardScaler()
+scaler = MinMaxScaler()
 X_train = scaler.fit_transform(X_train)
 X_test = scaler.transform(X_test)
 print("X standardized\n.\n.\n.")
@@ -48,19 +49,23 @@ transformer= QuantileTransformer(
     random_state=42,
     output_distribution="normal"
 )
-
-transformer = PowerTransformer(
-    # method="box-cox",
-)
-
 X_train = transformer.fit_transform(X_train)
 X_test =transformer.transform(X_test)
 print("X transformed\n.\n.\n.")
 
+
 selection = VarianceThreshold(threshold=(.8 * (1 - .8)))
 X_train = selection.fit_transform(X_train)
 X_test =selection.transform(X_test)
+print(X_train.shape)
 print("Low variance X removed\n.\n.\n.")
+
+
+# transformer = PowerTransformer(
+#     # method="box-cox",
+# )
+
+
 
 print("Model is Learning\n.\n.\n.")
 model = RandomForestRegressor(
@@ -77,21 +82,15 @@ print("Model Learned")
 print(Y_pred)
 print(rsquare)
 
-import matplotlib.pyplot as plt
+pd.DataFrame({
+    "Y_pred":Y_pred,
+    "Y_test":Y_test
+}).to_csv("result.csv",index=False)
 
 
-# Plotting
-plt.plot(Y_pred, Y_test , 'o', label='Prediction vs True')
-plt.xlabel('True Values')
-plt.ylabel('Predicted Values')
-plt.title('Prediction vs True Values')
-plt.legend()
+# Export the trained model to a file
+with open('model_filename.pkl', 'wb') as file:
+    pickle.dump(model, file)
 
-# Save the plot to a file (e.g., PNG, PDF, etc.)
-plt.savefig('prediction_vs_true_plot.png')
-
-
-# cv_results = cross_val_score(model, X_train, Y_train, cv=kf, scoring='neg_mean_squared_error')
-# print("Cross-Validation Results (Mean Squared Error):", cv_results)
-# print("Mean MSE: {:.2f}".format(cv_results.mean()))
-# print("Standard Deviation: {:.2f}".format(cv_results.std()))
+# Export the trained model to a file
+joblib.dump(model, 'model_filename.joblib')
